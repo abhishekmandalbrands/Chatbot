@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Royal Enfield Store — AI Assistant</title>
+  <title>Royal Enfield Apparel — AI Shopping Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -82,26 +83,40 @@ YOU MUST RESPOND ONLY WITH VALID JSON. NO text before or after. Exact format:
 {"message":"your reply here","productIds":["ts001","hw001"]}
 productIds must be real IDs from the catalogue, or an empty array [].`;
 
-    async function callClaude(conversationMessages) {
+    /* ── PASTE YOUR FREE GEMINI API KEY BELOW ─────────────────────────────
+   1. Get a free key at https://aistudio.google.com/apikey
+   2. Replace the placeholder string below
+   3. Save & re-upload to GitHub                                            */
+    const GEMINI_API_KEY = "AIzaSyAw0SXhZq7qA2Hp4XuwzqazTsDMOeBV8HI";
+
+    async function callAI(conversationMessages) {
+      // Find first user message (Gemini also requires conversation to start with user)
       const firstUserIdx = conversationMessages.findIndex(m => m.role === "user");
       if (firstUserIdx === -1) throw new Error("No user message found");
-      const apiMessages = conversationMessages.slice(firstUserIdx).map(m => ({
-        role: m.role,
-        content: m.text,
+
+      // Map our messages to Gemini format: role 'assistant' -> 'model', text -> parts
+      const contents = conversationMessages.slice(firstUserIdx).map(m => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.text }],
       }));
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      if (!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE") {
+        throw new Error("Add your free Gemini API key in the HTML file. Get one at aistudio.google.com/apikey");
+      }
+
+      const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + encodeURIComponent(GEMINI_API_KEY);
+
+      const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: apiMessages,
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: contents,
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+            responseMimeType: "application/json",
+          },
         }),
       });
 
@@ -111,8 +126,9 @@ productIds must be real IDs from the catalogue, or an empty array [].`;
       }
 
       const data = await response.json();
-      const raw = (data.content && data.content[0] && data.content[0].text) || "";
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
       const cleaned = raw.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
+
       try {
         const parsed = JSON.parse(cleaned);
         return {
@@ -273,7 +289,7 @@ productIds must be real IDs from the catalogue, or an empty array [].`;
         setMessages(updated);
         setLoading(true);
         try {
-          const result = await callClaude(updated);
+          const result = await callAI(updated);
           setMessages(prev => [...prev, {
             role:"assistant", text:result.message, productIds:result.productIds,
           }]);
