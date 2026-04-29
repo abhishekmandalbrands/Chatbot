@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Royal Enfield Store — AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #f7f5f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0);  opacity: 0.5; }
+      50%       { transform: translateY(-5px); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    /* ── Product catalogue ─────────────────────────────────────────────── */
+    const PRODUCTS = [
+      { id:"ts001", category:"t-shirts",    name:"Classic TT Logo Tee",          price:999,  mrp:1299, colors:["Black","White","Olive"],             sizes:["XS","S","M","L","XL","XXL"],      description:"Iconic TT logo on the chest. Everyday rider tee.",                          image:"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80", link:"https://store.royalenfield.com/en/collections/t-shirts/products/classic-tt-logo-tee",           emi:"84/mo on 12 months" },
+      { id:"ts002", category:"t-shirts",    name:"Dispatch Graphic Tee",          price:1199, mrp:1499, colors:["Charcoal","Sand","Navy"],             sizes:["S","M","L","XL","XXL"],           description:"Bold dispatch graphic. Built for riders who carry stories.",                 image:"https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&q=80", link:"https://store.royalenfield.com/en/collections/t-shirts/products/dispatch-graphic-tee",           emi:"100/mo on 12 months" },
+      { id:"ts003", category:"t-shirts",    name:"Made Like A Gun Tee",           price:1099, mrp:1399, colors:["Black","Military Green"],             sizes:["XS","S","M","L","XL","XXL","3XL"],description:"RE legendary tagline on premium cotton. A collector staple.",              image:"https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400&q=80", link:"https://store.royalenfield.com/en/collections/t-shirts/products/made-like-a-gun-tee",           emi:"92/mo on 12 months" },
+      { id:"hw001", category:"hoodies",     name:"Thunderbird Pullover Hoodie",   price:2999, mrp:3799, colors:["Black","Navy","Burgundy"],            sizes:["S","M","L","XL","XXL"],           description:"Heavyweight fleece with embroidered Thunderbird crest. Winter essential.",    image:"https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&q=80", link:"https://store.royalenfield.com/en/collections/hoodies/products/thunderbird-pullover-hoodie",    emi:"250/mo on 12 months" },
+      { id:"hw002", category:"hoodies",     name:"Himalayan Zip Hoodie",          price:3499, mrp:4299, colors:["Grey Marl","Black","Olive"],          sizes:["S","M","L","XL","XXL"],           description:"Named after the legendary adventure bike. Full-zip with kangaroo pocket.",    image:"https://images.unsplash.com/photo-1509942774463-acf339cf87d5?w=400&q=80", link:"https://store.royalenfield.com/en/collections/hoodies/products/himalayan-zip-hoodie",          emi:"292/mo on 12 months" },
+      { id:"cp001", category:"caps",        name:"Flat Track Snapback",           price:799,  mrp:999,  colors:["Black/White","Olive/Tan","Navy/Red"], sizes:["One Size"],                       description:"6-panel snapback with flat visor. RE patch embroidery at front.",            image:"https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&q=80", link:"https://store.royalenfield.com/en/collections/caps/products/flat-track-snapback",               emi:"67/mo on 12 months" },
+      { id:"cp002", category:"caps",        name:"Classic Trucker Cap",           price:699,  mrp:899,  colors:["Black","White","Camo"],              sizes:["One Size"],                       description:"Breathable mesh trucker with embroidered Bull logo.",                        image:"https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?w=400&q=80", link:"https://store.royalenfield.com/en/collections/caps/products/classic-trucker-cap",               emi:"58/mo on 12 months" },
+      { id:"jk001", category:"jackets",     name:"Streetwind Bomber Jacket",      price:5999, mrp:7499, colors:["Black","Olive","Tan"],               sizes:["S","M","L","XL","XXL"],           description:"Slim-fit bomber with RE embroidery. Casual yet built for the road.",          image:"https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80", link:"https://store.royalenfield.com/en/collections/jackets/products/streetwind-bomber-jacket",      emi:"500/mo on 12 months" },
+      { id:"jk002", category:"jackets",     name:"Rotor Denim Jacket",            price:4499, mrp:5999, colors:["Indigo","Black Wash","Stone Wash"],  sizes:["S","M","L","XL","XXL"],           description:"Classic denim cut with RE heritage patch. Wear it on or off the bike.",       image:"https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80", link:"https://store.royalenfield.com/en/collections/jackets/products/rotor-denim-jacket",            emi:"375/mo on 12 months" },
+      { id:"cl001", category:"collectibles",name:"Interceptor 650 Die-Cast Model",price:2499, mrp:2999, colors:["Orange Crush","Mark 2 Silver"],      sizes:["1:12 Scale"],                     description:"Collector-grade 1:12 scale Interceptor 650. Perfect desk display.",           image:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80", link:"https://store.royalenfield.com/en/collections/collectibles/products/interceptor-650-diecast",   emi:"208/mo on 12 months" },
+      { id:"cl002", category:"collectibles",name:"RE Heritage Enamel Mug",        price:499,  mrp:649,  colors:["Classic Red","Black"],               sizes:["350ml"],                          description:"Vintage enamel mug with RE logo. For the chai breaks between rides.",         image:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=400&q=80", link:"https://store.royalenfield.com/en/collections/collectibles/products/re-heritage-mug",          emi:null },
+    ];
+
+    const SYSTEM_PROMPT = `You are a friendly customer support assistant for the Royal Enfield official store at store.royalenfield.com/en/
+Be warm, conversational, like a fellow rider helping a friend shop. Never robotic.
+Detect user language and reply in the SAME language (English, Hindi, or Hinglish).
+
+PRODUCT CATALOGUE (use exact IDs):
+${JSON.stringify(PRODUCTS.map(p => ({ id:p.id, name:p.name, category:p.category, price:p.price, colors:p.colors, sizes:p.sizes, description:p.description, link:p.link, tags:p.tags, emi:p.emi })))}
+
+STORE POLICIES:
+- Shipping: Free above Rs.999, 5-7 business days India, international available
+- Returns: 30-day for unworn items with tags, raise at store.royalenfield.com/en/account
+- Sizing: True to size, size up for hoodies
+- Payment: Cards, Net Banking, UPI, no-cost EMI on HDFC/ICICI/SBI/Axis above Rs.999
+- EMI tenures: 3, 6, 9, or 12 months
+- Contact: 1800-210-0007 toll-free, Mon-Sat 9AM-6PM IST, customercare@royalenfield.com
+- Track orders: store.royalenfield.com/en/account under My Orders
+- Store homepage: https://store.royalenfield.com/en/
+- All collections: https://store.royalenfield.com/en/collections
+
+RULES:
+1. Suggest up to 3 products when asked, always include their direct link.
+2. For bikes or motorcycles say you only cover apparel and merchandise, direct to royalenfield.com for bikes.
+3. Always mention price, colors and sizes when recommending.
+4. Keep replies concise and helpful.
+
+YOU MUST RESPOND ONLY WITH VALID JSON. NO text before or after. Exact format:
+{"message":"your reply here","productIds":["ts001","hw001"]}
+productIds must be real IDs from the catalogue, or an empty array [].`;
+
+    async function callClaude(conversationMessages) {
+      const firstUserIdx = conversationMessages.findIndex(m => m.role === "user");
+      if (firstUserIdx === -1) throw new Error("No user message found");
+      const apiMessages = conversationMessages.slice(firstUserIdx).map(m => ({
+        role: m.role,
+        content: m.text,
+      }));
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: apiMessages,
+        }),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error("API " + response.status + ": " + errBody.slice(0, 300));
+      }
+
+      const data = await response.json();
+      const raw = (data.content && data.content[0] && data.content[0].text) || "";
+      const cleaned = raw.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
+      try {
+        const parsed = JSON.parse(cleaned);
+        return {
+          message: typeof parsed.message === "string" ? parsed.message : raw,
+          productIds: Array.isArray(parsed.productIds) ? parsed.productIds : [],
+        };
+      } catch {
+        return { message: cleaned || "Something went wrong, please try again.", productIds: [] };
+      }
+    }
+
+    /* ── Product Card ───────────────────────────────────────────────────── */
+    function ProductCard({ product }) {
+      const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+      const [hovered, setHovered] = useState(false);
+      return (
+        <a href={product.link} target="_blank" rel="noopener noreferrer"
+          style={{ textDecoration:"none", display:"block", marginBottom:8 }}>
+          <div
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+              background:"#fff", borderRadius:12, overflow:"hidden",
+              border:"1px solid #e8e8e8", cursor:"pointer",
+              boxShadow: hovered ? "0 6px 24px rgba(0,0,0,0.13)" : "none",
+              transform: hovered ? "translateY(-2px)" : "translateY(0)",
+              transition:"box-shadow 0.2s, transform 0.2s",
+            }}>
+            <div style={{ position:"relative" }}>
+              <img src={product.image} alt={product.name}
+                style={{ width:"100%", height:120, objectFit:"cover", display:"block" }} />
+              {discount > 0 && (
+                <div style={{ position:"absolute", top:8, left:8, background:"#c8102e", color:"#fff",
+                  fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:4 }}>
+                  {discount}% OFF
+                </div>
+              )}
+            </div>
+            <div style={{ padding:"10px 12px 12px" }}>
+              <div style={{ fontSize:10, color:"#999", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>
+                {product.category}
+              </div>
+              <div style={{ fontSize:13, fontWeight:700, color:"#1a1a1a", marginBottom:4, lineHeight:1.3 }}>
+                {product.name}
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                <span style={{ fontSize:14, fontWeight:800, color:"#1a1a1a" }}>
+                  &#8377;{product.price.toLocaleString()}
+                </span>
+                <span style={{ fontSize:11, color:"#bbb", textDecoration:"line-through" }}>
+                  &#8377;{product.mrp.toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:6 }}>
+                {product.colors.slice(0,3).map(c => (
+                  <span key={c} style={{ fontSize:10, color:"#666", background:"#f5f5f5",
+                    borderRadius:4, padding:"2px 6px" }}>{c}</span>
+                ))}
+              </div>
+              {product.emi && (
+                <div style={{ fontSize:10, color:"#2a7d4f", fontWeight:600, marginBottom:7 }}>
+                  EMI from Rs.{product.emi}
+                </div>
+              )}
+              <div style={{ background:"#c8102e", color:"#fff", textAlign:"center",
+                borderRadius:7, padding:"7px 0", fontSize:11, fontWeight:700, letterSpacing:"0.04em" }}>
+                VIEW ON STORE
+              </div>
+            </div>
+          </div>
+        </a>
+      );
+    }
+
+    /* ── Message text with link parsing ────────────────────────────────── */
+    function MessageText({ text }) {
+      const parts = [];
+      const regex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+      let last = 0, match;
+      while ((match = regex.exec(text)) !== null) {
+        if (match.index > last) parts.push({ type:"text", content:text.slice(last, match.index) });
+        parts.push({ type:"link", label:match[1], url:match[2] });
+        last = match.index + match[0].length;
+      }
+      if (last < text.length) parts.push({ type:"text", content:text.slice(last) });
+      return (
+        <span>
+          {parts.map((p, i) =>
+            p.type === "link"
+              ? <a key={i} href={p.url} target="_blank" rel="noopener noreferrer"
+                  style={{ color:"#c8102e", fontWeight:600, textDecoration:"underline" }}>{p.label}</a>
+              : <span key={i} style={{ whiteSpace:"pre-wrap" }}>{p.content}</span>
+          )}
+        </span>
+      );
+    }
+
+    /* ── Logo & Showcase Data ───────────────────────────────────────────── */
+    const LOGO_URL = "data:image/jpeg;base64,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";
+
+    const CATEGORIES = [
+      { id:"riding-gear",     label:"Riding Gear",      icon:"🧤", url:"https://store.royalenfield.com/en/collections/riding-gear",     color:"#1a1a1a" },
+      { id:"helmets",         label:"Helmets",          icon:"⛑️", url:"https://store.royalenfield.com/en/collections/helmets",         color:"#c8102e" },
+      { id:"lifestyle",       label:"Lifestyle Apparel",icon:"👕", url:"https://store.royalenfield.com/en/collections/apparel",         color:"#1a1a1a" },
+      { id:"collectibles",    label:"Collectibles",     icon:"🏍️", url:"https://store.royalenfield.com/en/collections/collectibles",    color:"#c8102e" },
+    ];
+
+    const EXCITING_LINKS = [
+      { label:"🔥 Best Sellers",       url:"https://store.royalenfield.com/en/collections/best-sellers",     bg:"#fff4e6", color:"#c2410c", border:"#fed7aa" },
+      { label:"✨ Just Launched",      url:"https://store.royalenfield.com/en/collections/new-arrivals",     bg:"#ecfdf5", color:"#047857", border:"#a7f3d0" },
+      { label:"⏳ Almost Stock Out",   url:"https://store.royalenfield.com/en/collections/limited-stock",    bg:"#fef2f2", color:"#b91c1c", border:"#fecaca" },
+      { label:"🛡️ High Safety Gear",   url:"https://store.royalenfield.com/en/collections/safety-gear",      bg:"#eff6ff", color:"#1d4ed8", border:"#bfdbfe" },
+      { label:"💸 Deals Under ₹999",   url:"https://store.royalenfield.com/en/collections/under-999",        bg:"#fef9c3", color:"#a16207", border:"#fde68a" },
+      { label:"🎁 Gifting Picks",      url:"https://store.royalenfield.com/en/collections/gifts",            bg:"#fdf2f8", color:"#be185d", border:"#fbcfe8" },
+    ];
+
+    /* ── Main App ───────────────────────────────────────────────────────── */
+    const QUICK_REPLIES = [
+      "Show me hoodies", "Best gifting options",
+      "What is on sale?", "Track my order",
+      "Size guide", "EMI options?",
+    ];
+
+    function App() {
+      const [messages, setMessages] = useState([{
+        role:"assistant",
+        text:"Hey there! Welcome to the Royal Enfield Store.\n\nI can help you find apparel, merchandise and collectibles. What are you looking for today?",
+        productIds:[],
+      }]);
+      const [input, setInput]       = useState("");
+      const [loading, setLoading]   = useState(false);
+      const [errorMsg, setErrorMsg] = useState("");
+      const [showQuick, setShowQuick] = useState(true);
+      const bottomRef = useRef(null);
+
+      useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+      }, [messages, loading]);
+
+      const resetChat = () => {
+        setMessages([{
+          role:"assistant",
+          text:"Hey there! Welcome to the Royal Enfield Store.\n\nI can help you find apparel, merchandise and collectibles. What are you looking for today?",
+          productIds:[],
+        }]);
+        setInput("");
+        setLoading(false);
+        setErrorMsg("");
+        setShowQuick(true);
+      };
+
+      const send = async (textArg) => {
+        const msg = (textArg !== undefined ? textArg : input).trim();
+        if (!msg || loading) return;
+        setInput(""); setShowQuick(false); setErrorMsg("");
+        const userMsg = { role:"user", text:msg, productIds:[] };
+        const updated = [...messages, userMsg];
+        setMessages(updated);
+        setLoading(true);
+        try {
+          const result = await callClaude(updated);
+          setMessages(prev => [...prev, {
+            role:"assistant", text:result.message, productIds:result.productIds,
+          }]);
+        } catch (e) {
+          setErrorMsg(String(e && e.message ? e.message : e));
+          setMessages(prev => [...prev, {
+            role:"assistant", text:"Sorry, I ran into an error. Please try again.", productIds:[],
+          }]);
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div style={{ width:"100%", maxWidth:420, height:"min(780px, 92vh)",
+          display:"flex", flexDirection:"column", background:"#fff",
+          borderRadius:24, boxShadow:"0 24px 80px rgba(0,0,0,0.14)",
+          overflow:"hidden", animation:"fadeUp 0.4s ease" }}>
+
+          {/* Header */}
+          <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0eeeb",
+            display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
+              <img src={LOGO_URL} alt="Royal Enfield Apparel"
+                style={{ height:36, width:"auto", flexShrink:0, borderRadius:6 }} />
+              <div style={{ display:"flex", alignItems:"center", gap:5, minWidth:0 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", flexShrink:0 }} />
+                <span style={{ fontSize:11, color:"#888", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>AI Shopping Assistant</span>
+              </div>
+            </div>
+            <button onClick={resetChat}
+              style={{ fontSize:11, color:"#555", fontWeight:700,
+                background:"#f5f4f1", padding:"6px 11px", borderRadius:8,
+                border:"1px solid #e0dedd", whiteSpace:"nowrap", display:"flex",
+                alignItems:"center", gap:4, cursor:"pointer", fontFamily:"inherit", flexShrink:0 }}
+              onMouseEnter={e => { e.target.style.background="#e8e6e2"; }}
+              onMouseLeave={e => { e.target.style.background="#f5f4f1"; }}>
+              🏠 Home
+            </button>
+          </div>
+
+          {/* Error banner */}
+          {errorMsg && (
+            <div style={{ background:"#fff0f0", borderBottom:"1px solid #ffd6d6",
+              padding:"7px 16px", fontSize:11, color:"#c00", flexShrink:0, wordBreak:"break-all" }}>
+              ⚠ {errorMsg}
+            </div>
+          )}
+
+          {/* Messages */}
+          <div style={{ flex:1, overflowY:"auto", padding:"14px 14px 8px",
+            display:"flex", flexDirection:"column", gap:10, background:"#faf9f7" }}>
+
+            {messages.map((m, i) => (
+              <div key={i} style={{
+                display:"flex", flexDirection:"column",
+                alignItems: m.role === "user" ? "flex-end" : "flex-start",
+                animation:"fadeUp 0.2s ease",
+              }}>
+                <div style={{
+                  maxWidth:"82%", padding:"10px 14px",
+                  borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                  background: m.role === "user" ? "#1a1a1a" : "#fff",
+                  border: m.role === "assistant" ? "1px solid #ebebeb" : "none",
+                  color: m.role === "user" ? "#fff" : "#2a2a2a",
+                  fontSize:13.5, lineHeight:1.6,
+                }}>
+                  <MessageText text={m.text} />
+                </div>
+                {m.role === "assistant" && m.productIds && m.productIds.length > 0 && (
+                  <div style={{ maxWidth:"92%", marginTop:8, width:"100%" }}>
+                    {m.productIds.map(id => {
+                      const p = PRODUCTS.find(x => x.id === id);
+                      return p ? <ProductCard key={id} product={p} /> : null;
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {loading && (
+              <div style={{ display:"flex", gap:5, padding:"11px 14px", background:"#fff",
+                borderRadius:"18px 18px 18px 4px", width:"fit-content", border:"1px solid #ebebeb" }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:"#c8102e",
+                    animation:`bounce 1s ${i*0.18}s infinite` }} />
+                ))}
+              </div>
+            )}
+
+            {showQuick && messages.length === 1 && (
+              <div style={{ marginTop:6, display:"flex", flexDirection:"column", gap:14 }}>
+
+                {/* CATEGORIES */}
+                <div>
+                  <div style={{ fontSize:10, color:"#bbb", marginBottom:8,
+                    fontWeight:700, letterSpacing:"0.08em" }}>SHOP BY CATEGORY</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:7 }}>
+                    {CATEGORIES.map(cat => (
+                      <a key={cat.id} href={cat.url} target="_blank" rel="noopener noreferrer"
+                        style={{ background:"#fff", border:"1px solid #ebe9e6",
+                          borderRadius:12, padding:"11px 12px", textDecoration:"none",
+                          display:"flex", alignItems:"center", gap:9,
+                          transition:"all 0.18s", cursor:"pointer" }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor=cat.color; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.06)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor="#ebe9e6"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none"; }}>
+                        <div style={{ fontSize:18, flexShrink:0 }}>{cat.icon}</div>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#1a1a1a", lineHeight:1.2 }}>{cat.label}</div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* EXCITING LINKS */}
+                <div>
+                  <div style={{ fontSize:10, color:"#bbb", marginBottom:8,
+                    fontWeight:700, letterSpacing:"0.08em" }}>TRENDING NOW</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {EXCITING_LINKS.map((l, i) => (
+                      <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                        style={{ background:l.bg, border:"1px solid "+l.border,
+                          borderRadius:20, padding:"6px 12px", fontSize:11.5,
+                          color:l.color, fontWeight:700, textDecoration:"none",
+                          fontFamily:"inherit", transition:"transform 0.15s",
+                          display:"inline-block" }}
+                        onMouseEnter={e => { e.target.style.transform="translateY(-1px)"; }}
+                        onMouseLeave={e => { e.target.style.transform="translateY(0)"; }}>
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* QUICK QUESTIONS */}
+                <div>
+                  <div style={{ fontSize:10, color:"#bbb", marginBottom:8,
+                    fontWeight:700, letterSpacing:"0.08em" }}>OR ASK ME</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {QUICK_REPLIES.map((q, i) => (
+                      <button key={i} onClick={() => send(q)} style={{
+                        background:"#fff", border:"1px solid #e5e3e0",
+                        borderRadius:20, padding:"6px 12px", fontSize:12,
+                        color:"#555", cursor:"pointer", fontFamily:"inherit", transition:"all 0.15s",
+                      }}
+                        onMouseEnter={e => { e.target.style.background="#fff0f2"; e.target.style.borderColor="#c8102e"; e.target.style.color="#c8102e"; }}
+                        onMouseLeave={e => { e.target.style.background="#fff"; e.target.style.borderColor="#e5e3e0"; e.target.style.color="#555"; }}
+                      >{q}</button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{ padding:"12px 14px 16px", borderTop:"1px solid #f0eeeb", flexShrink:0 }}>
+            <div style={{ display:"flex", gap:8, alignItems:"center",
+              background:"#f5f4f1", borderRadius:14, padding:"4px 4px 4px 14px" }}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="Ask about products, size, delivery..."
+                disabled={loading}
+                style={{ flex:1, background:"none", border:"none", outline:"none",
+                  fontSize:13.5, color:"#1a1a1a", fontFamily:"inherit", padding:"7px 0" }}
+              />
+              <button onClick={() => send()} disabled={loading || !input.trim()} style={{
+                width:38, height:38, borderRadius:10, border:"none",
+                background: input.trim() && !loading ? "#c8102e" : "#e0dedd",
+                color:"#fff", fontSize:15, cursor: input.trim() && !loading ? "pointer" : "default",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                transition:"background 0.2s", flexShrink:0,
+              }}>&#10148;</button>
+            </div>
+            <div style={{ textAlign:"center", marginTop:8, fontSize:10, color:"#ccc", letterSpacing:"0.06em" }}>
+              POWERED BY AI · store.royalenfield.com/en
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
